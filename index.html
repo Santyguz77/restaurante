@@ -149,6 +149,21 @@
 			margin-top: 20px;
 			text-align: right;
 		}
+		
+		@keyframes pulse {
+			0%, 100% { opacity: 1; transform: scale(1); }
+			50% { opacity: 0.5; transform: scale(1.2); }
+		}
+		
+		@keyframes slideIn {
+			from { transform: translateX(400px); opacity: 0; }
+			to { transform: translateX(0); opacity: 1; }
+		}
+		
+		@keyframes slideOut {
+			from { transform: translateX(0); opacity: 1; }
+			to { transform: translateX(400px); opacity: 0; }
+		}
 	</style>
 </head>
 <body>
@@ -212,7 +227,13 @@
 			<div id="dashboard" class="section active">
 				<div class="header">
 					<h1>Dashboard</h1>
-					<button class="btn" onclick="refreshData()">🔄 Actualizar</button>
+					<div style="display: flex; align-items: center; gap: 15px;">
+						<button class="btn" onclick="refreshData()">🔄 Actualizar</button>
+						<span style="color: #4caf50; font-size: 14px; display: flex; align-items: center; gap: 5px;">
+							<span style="width: 8px; height: 8px; background: #4caf50; border-radius: 50%; animation: pulse 2s infinite;"></span>
+							Auto-actualización activa
+						</span>
+					</div>
 				</div>
 
 				<div class="dashboard-grid">
@@ -430,12 +451,67 @@
 	<script>
 		let currentEditingTable = null;
 		let currentEditingMenuItem = null;
+		let autoRefreshInterval = null;
+		let isRefreshing = false;
 
 		async function init() {
 			await loadInitialData();
 			await initializeDefaultData();
 			renderDashboard();
 			renderAllSections();
+			startAutoRefresh();
+		}
+		
+		// Auto-actualización cada 5 segundos
+		function startAutoRefresh() {
+			// Limpiar intervalo anterior si existe
+			if (autoRefreshInterval) {
+				clearInterval(autoRefreshInterval);
+			}
+			
+			// Actualizar cada 5 segundos
+			autoRefreshInterval = setInterval(async () => {
+				if (!isRefreshing) {
+					isRefreshing = true;
+					try {
+						await loadInitialData();
+						
+						// Solo actualizar la sección activa para no interrumpir formularios
+						const activeSection = document.querySelector('.section.active');
+						if (activeSection) {
+							const sectionId = activeSection.id;
+							if (sectionId === 'dashboard') renderDashboard();
+							if (sectionId === 'tables') renderTables();
+							if (sectionId === 'orders') renderOrders();
+							if (sectionId === 'transactions') renderTransactions();
+						}
+						
+						// Actualizar badge de notificaciones si hay pedidos nuevos
+						updateNotificationBadge();
+					} catch (error) {
+						console.error('Error en auto-refresh:', error);
+					} finally {
+						isRefreshing = false;
+					}
+				}
+			}, 5000); // 5 segundos
+		}
+		
+		function stopAutoRefresh() {
+			if (autoRefreshInterval) {
+				clearInterval(autoRefreshInterval);
+				autoRefreshInterval = null;
+			}
+		}
+		
+		function updateNotificationBadge() {
+			const activeOrders = AppState.orders.filter(o => o.status === 'pending').length;
+			// Aquí podrías agregar un badge visual si quieres
+			if (activeOrders > 0) {
+				document.title = `(${activeOrders}) Admin - Sistema Restaurante`;
+			} else {
+				document.title = 'Admin - Sistema Restaurante';
+			}
 		}
 
 		function showSection(sectionId) {
@@ -443,6 +519,13 @@
 			document.getElementById(sectionId).classList.add('active');
 			document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
 			event.target.closest('li').classList.add('active');
+			
+			// Pausar auto-refresh al editar menú para no interrumpir
+			if (sectionId === 'menu-config') {
+				stopAutoRefresh();
+			} else {
+				startAutoRefresh();
+			}
 			
 			if (sectionId === 'dashboard') renderDashboard();
 			if (sectionId === 'tables') renderTables();
@@ -452,9 +535,26 @@
 		}
 
 		async function refreshData() {
+			const btn = event.target;
+			btn.disabled = true;
+			btn.textContent = '⏳ Actualizando...';
+			
 			await loadInitialData();
 			renderAllSections();
-			Utils.showNotification('Datos actualizados', 'success');
+			
+			btn.disabled = false;
+			btn.innerHTML = '🔄 Actualizar';
+			
+			// Mostrar notificación temporal
+			const notification = document.createElement('div');
+			notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 9999; animation: slideIn 0.3s ease;';
+			notification.textContent = '✅ Datos actualizados';
+			document.body.appendChild(notification);
+			
+			setTimeout(() => {
+				notification.style.animation = 'slideOut 0.3s ease';
+				setTimeout(() => notification.remove(), 300);
+			}, 2000);
 		}
 
 		function renderAllSections() {
