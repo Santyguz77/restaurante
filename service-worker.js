@@ -1,4 +1,4 @@
-const CACHE_NAME = 'restaurante-v3';
+const CACHE_NAME = 'restaurante-v4';
 const urlsToCache = [
   '/',
   '/selector.html',
