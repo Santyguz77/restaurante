@@ -109,6 +109,29 @@
 			text-decoration: none;
 		}
 		
+		.install-btn {
+			display: none;
+			background: linear-gradient(135deg, #ff6b35, #ff8555);
+			color: white;
+			border: none;
+			padding: 15px 30px;
+			border-radius: 50px;
+			font-size: 16px;
+			font-weight: 600;
+			cursor: pointer;
+			margin: 20px 0;
+			box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+			transition: all 0.3s;
+		}
+		
+		.install-btn:active {
+			transform: scale(0.95);
+		}
+		
+		.install-btn.show {
+			display: inline-block;
+		}
+		
 		@media (max-width: 480px) {
 			h1 {
 				font-size: 24px;
@@ -168,9 +191,47 @@
 			</a>
 		</div>
 		
+		<button class="install-btn" id="installBtn" onclick="installPWA()">
+			📱 Instalar App
+		</button>
+		
 		<div class="footer">
 			Sistema de Gestión de Restaurante
 		</div>
 	</div>
+	
+	<script>
+		let deferredPrompt;
+		
+		// Capturar el evento de instalación
+		window.addEventListener('beforeinstallprompt', (e) => {
+			e.preventDefault();
+			deferredPrompt = e;
+			document.getElementById('installBtn').classList.add('show');
+		});
+		
+		// Función para instalar la PWA
+		async function installPWA() {
+			if (!deferredPrompt) {
+				alert('La app ya está instalada o usa el menú de tu navegador para instalarla');
+				return;
+			}
+			
+			deferredPrompt.prompt();
+			const { outcome } = await deferredPrompt.userChoice;
+			
+			if (outcome === 'accepted') {
+				console.log('PWA instalada');
+			}
+			
+			deferredPrompt = null;
+			document.getElementById('installBtn').classList.remove('show');
+		}
+		
+		// Ocultar botón si ya está instalada
+		window.addEventListener('appinstalled', () => {
+			document.getElementById('installBtn').classList.remove('show');
+		});
+	</script>
 </body>
 </html>
