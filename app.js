@@ -32,12 +32,17 @@ const API = {
 	async getAll(table) {
 		try {
 			const response = await fetch(`${API_URL}/${table}`);
-			if (!response.ok) throw new Error('Error al obtener datos');
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
 			const data = await response.json();
 			return data;
 		} catch (error) {
 			console.error(`Error obteniendo ${table}:`, error);
-			Utils.showNotification(`Error al obtener ${table}. Verifica la conexión al servidor.`, 'error');
+			// Solo mostrar alerta para tablas críticas
+			if (!['cash_closures'].includes(table)) {
+				Utils.showNotification(`Error al obtener ${table}. Verifica la conexión al servidor.`, 'error');
+			}
 			throw error;
 		}
 	},
@@ -149,12 +154,20 @@ async function loadInitialData() {
 		AppState.orders = await API.getAll('orders');
 		AppState.transactions = await API.getAll('transactions');
 		AppState.waiters = await API.getAll('waiters');
-		AppState.cashClosures = await API.getAll('cash_closures');
+		
+		// Intentar cargar cash_closures, si falla, usar array vacío
+		try {
+			AppState.cashClosures = await API.getAll('cash_closures');
+		} catch (err) {
+			console.warn('⚠️ Tabla cash_closures no disponible en el servidor');
+			AppState.cashClosures = [];
+		}
+		
 		const configArray = await API.getAll('config');
 		AppState.config = configArray.length > 0 ? configArray[0] : {};
 	} catch (error) {
 		console.error('Error cargando datos iniciales:', error);
-		// No hacer nada con localStorage, depender solo del backend
+		throw error;
 	}
 }
 
@@ -234,4 +247,3 @@ window.Storage = Storage;
 window.loadInitialData = loadInitialData;
 window.initializeDefaultData = initializeDefaultData;
 window.loadCashClosures = loadCashClosures;
-

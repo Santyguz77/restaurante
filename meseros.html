@@ -245,6 +245,7 @@
 				.filter(item => item.available)
 				.map(item => `
 				<div class="menu-card" onclick="addToOrder('${item.id}')">
+					${item.image ? `<img src="${item.image}" class="menu-card-image" alt="${item.name}">` : ''}
 					<div class="menu-card-body">
 						<div class="menu-card-title">${item.name}</div>
 						<div class="menu-card-description">${item.description || ''}</div>
