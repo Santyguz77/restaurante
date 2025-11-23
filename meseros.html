@@ -106,6 +106,19 @@
 	</style>
 </head>
 <body>
+	<script>
+		// Verificar sesión de mesero
+		const session = localStorage.getItem('userSession');
+		if (!session) {
+			window.location.href = '/login.html';
+		} else {
+			const userData = JSON.parse(session);
+			if (userData.type !== 'waiter') {
+				alert('⚠️ Acceso denegado. Esta página es solo para meseros.');
+				window.location.href = '/login.html';
+			}
+		}
+	</script>
 	<div class="app">
 		<div class="main meseros-layout">
 			<!-- Vista de selección de mesa -->
@@ -115,6 +128,7 @@
 						<img src="image.png" alt="Logo" style="width: 50px; height: 50px; border-radius: 50%;">
 						<h1>Selecciona una Mesa</h1>
 					</div>
+					<button class="btn btn-danger" onclick="logout()" style="background: #f44336;">🚪 Cerrar</button>
 				</div>
 				<div class="tables-grid" id="tables-grid"></div>
 			</div>
@@ -130,6 +144,7 @@
 					<div class="controls">
 						<button class="btn btn-success" onclick="saveOrder()">💾 Guardar Pedido</button>
 						<button class="btn btn-danger" onclick="clearOrder()">🗑️ Limpiar</button>
+						<button class="btn" onclick="logout()" style="background: #666;">🚪</button>
 					</div>
 				</div>
 
@@ -381,6 +396,14 @@
 
 			Utils.showNotification('Pedido guardado correctamente', 'success');
 			backToTables();
+		}
+
+		// Función para cerrar sesión
+		function logout() {
+			if (confirm('¿Cerrar sesión?')) {
+				localStorage.removeItem('userSession');
+				window.location.href = '/login.html';
+			}
 		}
 
 		// Iniciar aplicación
