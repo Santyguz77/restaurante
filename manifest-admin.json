@@ -1,8 +1,8 @@
 {
-  "name": "Sistema Restaurante",
-  "short_name": "Restaurante",
-  "description": "Sistema de gestión para restaurante - Pedidos, menú y finanzas",
-  "start_url": "/meseros.html",
+  "name": "Restaurante Admin",
+  "short_name": "Admin",
+  "description": "Panel administrativo del restaurante",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#1a0f0a",
   "theme_color": "#ff6b35",
