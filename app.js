@@ -27,18 +27,18 @@ const Storage = {
 	}
 };
 
-// Cliente API
+// Cliente API - Solo backend, sin localStorage
 const API = {
 	async getAll(table) {
 		try {
 			const response = await fetch(`${API_URL}/${table}`);
 			if (!response.ok) throw new Error('Error al obtener datos');
 			const data = await response.json();
-			Storage.set(table, data);
 			return data;
 		} catch (error) {
 			console.error(`Error obteniendo ${table}:`, error);
-			return Storage.get(table) || [];
+			Utils.showNotification(`Error al obtener ${table}. Verifica la conexión al servidor.`, 'error');
+			throw error;
 		}
 	},
 	
@@ -50,12 +50,11 @@ const API = {
 				body: JSON.stringify(items)
 			});
 			if (!response.ok) throw new Error('Error al guardar');
-			Storage.set(table, items);
 			return await response.json();
 		} catch (error) {
 			console.error(`Error guardando ${table}:`, error);
-			Storage.set(table, items);
-			return { success: false, error: error.message };
+			Utils.showNotification(`Error al guardar ${table}. Verifica la conexión al servidor.`, 'error');
+			throw error;
 		}
 	},
 	
@@ -70,7 +69,8 @@ const API = {
 			return await response.json();
 		} catch (error) {
 			console.error(`Error actualizando ${table}/${id}:`, error);
-			return { success: false, error: error.message };
+			Utils.showNotification(`Error al actualizar. Verifica la conexión al servidor.`, 'error');
+			throw error;
 		}
 	},
 	
@@ -83,7 +83,8 @@ const API = {
 			return await response.json();
 		} catch (error) {
 			console.error(`Error eliminando ${table}/${id}:`, error);
-			return { success: false, error: error.message };
+			Utils.showNotification(`Error al eliminar. Verifica la conexión al servidor.`, 'error');
+			throw error;
 		}
 	}
 };
@@ -112,9 +113,11 @@ const Utils = {
 	},
 	
 	showNotification(message, type = 'info') {
-		// Implementar notificaciones toast si se desea
 		console.log(`[${type.toUpperCase()}] ${message}`);
-		alert(message);
+		// Solo mostrar alertas para errores críticos
+		if (type === 'error') {
+			alert(message);
+		}
 	}
 };
 
@@ -130,24 +133,29 @@ if ('serviceWorker' in navigator) {
 // Detectar cambios en la conexión
 window.addEventListener('online', () => {
 	AppState.isOnline = true;
-	Utils.showNotification('Conexión restaurada', 'success');
+	console.log('✅ Conexión restaurada');
 });
 
 window.addEventListener('offline', () => {
 	AppState.isOnline = false;
-	Utils.showNotification('Sin conexión - Modo offline', 'warning');
+	console.warn('⚠️ Sin conexión al servidor');
 });
 
-// Cargar datos iniciales
+// Cargar datos iniciales - Solo desde backend
 async function loadInitialData() {
-	AppState.menuItems = await API.getAll('menu_items');
-	AppState.tables = await API.getAll('tables');
-	AppState.orders = await API.getAll('orders');
-	AppState.transactions = await API.getAll('transactions');
-	AppState.waiters = await API.getAll('waiters');
-	AppState.cashClosures = await API.getAll('cash_closures');
-	const configArray = await API.getAll('config');
-	AppState.config = configArray.length > 0 ? configArray[0] : {};
+	try {
+		AppState.menuItems = await API.getAll('menu_items');
+		AppState.tables = await API.getAll('tables');
+		AppState.orders = await API.getAll('orders');
+		AppState.transactions = await API.getAll('transactions');
+		AppState.waiters = await API.getAll('waiters');
+		AppState.cashClosures = await API.getAll('cash_closures');
+		const configArray = await API.getAll('config');
+		AppState.config = configArray.length > 0 ? configArray[0] : {};
+	} catch (error) {
+		console.error('Error cargando datos iniciales:', error);
+		// No hacer nada con localStorage, depender solo del backend
+	}
 }
 
 // Inicializar datos de ejemplo si no existen
