@@ -96,6 +96,39 @@
 			font-size: 12px;
 			margin-left: 10px;
 		}
+		.category-filter {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 12px;
+			justify-content: center;
+			margin-bottom: 40px;
+			padding: 0 20px;
+		}
+		.category-btn {
+			background: rgba(255, 255, 255, 0.05);
+			color: var(--text);
+			border: 2px solid rgba(255, 107, 53, 0.2);
+			padding: 12px 24px;
+			border-radius: 25px;
+			font-size: 15px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			backdrop-filter: blur(10px);
+		}
+		.category-btn:hover {
+			background: rgba(255, 107, 53, 0.1);
+			border-color: var(--accent);
+			color: var(--accent);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+		}
+		.category-btn.active {
+			background: linear-gradient(135deg, var(--accent), #ff8555);
+			color: #fff;
+			border-color: var(--accent);
+			box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+		}
 		@media (max-width: 768px) {
 			.menu-header h1 {
 				font-size: 36px;
