@@ -4,13 +4,73 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="theme-color" content="#ff6b35">
-	<link rel="manifest" href="/manifest-admin.json">
+	<link rel="manifest" href="/manifest.json">
 	<link rel="icon" type="image/png" href="/image.png">
 	<link rel="apple-touch-icon" href="/image.png">
 	<link rel="stylesheet" href="styles.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<title>Admin - Sistema Restaurante</title>
 	<style>
+		/* Menú Hamburguesa */
+		.hamburger {
+			display: none;
+			position: fixed;
+			top: 15px;
+			left: 15px;
+			z-index: 1001;
+			background: var(--accent);
+			border: none;
+			color: white;
+			width: 50px;
+			height: 50px;
+			border-radius: 50%;
+			font-size: 24px;
+			cursor: pointer;
+			box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+			transition: transform 0.3s;
+		}
+		.hamburger:active {
+			transform: scale(0.95);
+		}
+		.mobile-overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.7);
+			z-index: 999;
+		}
+		.mobile-overlay.active {
+			display: block;
+		}
+		.sidebar.mobile-open {
+			transform: translateX(0) !important;
+		}
+		
+		@media (max-width: 768px) {
+			.hamburger {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.sidebar {
+				position: fixed;
+				left: 0;
+				top: 0;
+				height: 100vh;
+				transform: translateX(-100%);
+				transition: transform 0.3s ease;
+				z-index: 1000;
+				width: 260px;
+			}
+			.main {
+				margin-left: 0;
+				padding: 80px 15px 20px 15px;
+			}
+		}
+		
 		.dashboard-grid {
 			display: grid;
 			grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -92,31 +152,39 @@
 	</style>
 </head>
 <body>
+	<!-- Botón Hamburguesa (solo móvil) -->
+	<button class="hamburger" onclick="toggleMobileMenu()" aria-label="Menú">
+		☰
+	</button>
+	
+	<!-- Overlay para cerrar menú en móvil -->
+	<div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+	
 	<div class="app">
 		<!-- Sidebar -->
-		<div class="sidebar">
+		<div class="sidebar" id="sidebar">
 			<div class="brand">
 				<img src="image.png" alt="Logo" style="width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px;">
 				<div>Restaurante</div>
 				<span>Panel de Control</span>
 			</div>
 			<ul class="menu">
-				<li class="active" onclick="showSection('dashboard')">
+				<li class="active" onclick="showSection('dashboard'); closeMobileMenu();">
 					<span class="menu-icon">📊</span> Dashboard
 				</li>
-				<li onclick="showSection('tables')">
+				<li onclick="showSection('tables'); closeMobileMenu();">
 					<span class="menu-icon">🪑</span> Mesas
 				</li>
-				<li onclick="showSection('orders')">
+				<li onclick="showSection('orders'); closeMobileMenu();">
 					<span class="menu-icon">📝</span> Pedidos
 				</li>
-				<li onclick="showSection('menu-config')">
+				<li onclick="showSection('menu-config'); closeMobileMenu();">
 					<span class="menu-icon">🍔</span> Menú
 				</li>
-				<li onclick="showSection('transactions')">
+				<li onclick="showSection('transactions'); closeMobileMenu();">
 					<span class="menu-icon">💰</span> Finanzas
 				</li>
-				<li onclick="showSection('close-cash')">
+				<li onclick="showSection('close-cash'); closeMobileMenu();">
 					<span class="menu-icon">🔒</span> Cierre de Caja
 				</li>
 			</ul>
@@ -1164,6 +1232,21 @@
 			const pdfBlob = doc.output('blob');
 			const pdfUrl = URL.createObjectURL(pdfBlob);
 			window.open(pdfUrl, '_blank');
+		}
+
+		// Funciones para menú móvil
+		function toggleMobileMenu() {
+			const sidebar = document.getElementById('sidebar');
+			const overlay = document.querySelector('.mobile-overlay');
+			sidebar.classList.toggle('mobile-open');
+			overlay.classList.toggle('active');
+		}
+		
+		function closeMobileMenu() {
+			const sidebar = document.getElementById('sidebar');
+			const overlay = document.querySelector('.mobile-overlay');
+			sidebar.classList.remove('mobile-open');
+			overlay.classList.remove('active');
 		}
 
 		init();
