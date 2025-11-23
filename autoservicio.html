@@ -647,19 +647,18 @@
 			btn.textContent = '⏳ Procesando...';
 			
 			try {
-				// Buscar o crear mesa "Para Llevar"
-				let takeawayTable = AppState.tables.find(t => t.number === 'Para Llevar');
+				// Crear nueva mesa única para este pedido
+				const tableNumber = generateTakeawayNumber();
+				const tableId = Utils.generateId();
 				
-				if (!takeawayTable) {
-					takeawayTable = {
-						id: Utils.generateId(),
-						number: 'Para Llevar',
-						capacity: 0,
-						status: 'occupied',
-						currentOrder: null
-					};
-					AppState.tables.push(takeawayTable);
-				}
+				const newTable = {
+					id: tableId,
+					number: tableNumber,
+					capacity: 0,
+					status: 'occupied',
+					currentOrder: null,
+					isTakeaway: true // Marcador para identificar pedidos para llevar
+				};
 				
 				// Crear orden
 				const orderId = Utils.generateId();
@@ -667,8 +666,8 @@
 				
 				const order = {
 					id: orderId,
-					tableId: takeawayTable.id,
-					tableNumber: 'Para Llevar',
+					tableId: tableId,
+					tableNumber: tableNumber,
 					items: cart.map(item => ({
 						id: item.id,
 						name: item.name,
@@ -678,21 +677,23 @@
 					})),
 					total: total,
 					status: 'pending',
-					createdAt: new Date().toISOString()
+					createdAt: new Date().toISOString(),
+					isTakeaway: true
 				};
 				
-				AppState.orders.push(order);
+				// Actualizar mesa con la orden
+				newTable.currentOrder = orderId;
 				
-				// Actualizar mesa
-				takeawayTable.status = 'occupied';
-				takeawayTable.currentOrder = orderId;
+				// Agregar al estado
+				AppState.tables.push(newTable);
+				AppState.orders.push(order);
 				
 				// Guardar en backend
 				await API.save('orders', AppState.orders);
 				await API.save('tables', AppState.tables);
 				
 				// Mostrar modal de éxito
-				document.getElementById('order-number').textContent = orderId.slice(0, 8).toUpperCase();
+				document.getElementById('order-number').textContent = tableNumber;
 				document.getElementById('success-modal').classList.add('active');
 				
 			} catch (error) {
@@ -701,6 +702,13 @@
 				btn.disabled = false;
 				btn.textContent = '🛍️ Realizar Pedido';
 			}
+		}
+		
+		// Generar número único para pedido para llevar
+		function generateTakeawayNumber() {
+			const takeawayTables = AppState.tables.filter(t => t.isTakeaway);
+			const nextNumber = takeawayTables.length + 1;
+			return `PL-${String(nextNumber).padStart(3, '0')}`;
 		}
 
 		function closeModalAndReset() {
