@@ -230,13 +230,33 @@
 			<div id="close-cash" class="section">
 				<div class="header">
 					<h1>Cierre de Caja</h1>
-					<button class="btn btn-warning" onclick="generateCloseCash()">📄 Generar Cierre</button>
+					<div class="controls">
+						<button class="btn btn-warning" onclick="generateCloseCash()">📄 Generar Cierre Actual</button>
+						<button class="btn btn-secondary" onclick="viewClosureHistory()">📋 Historial</button>
+					</div>
 				</div>
 				<div class="card">
 					<div id="close-cash-content">
 						<p class="text-center" style="color: var(--muted); padding: 40px;">
-							Haz clic en "Generar Cierre" para ver el resumen del día
+							Haz clic en "Generar Cierre Actual" para ver el resumen del día
 						</p>
+					</div>
+				</div>
+
+				<div id="closure-history" style="margin-top: 20px; display: none;">
+					<h3 style="color: var(--accent); margin-bottom: 15px;">Historial de Cierres</h3>
+					<div class="table-scroll">
+						<table id="closures-table">
+							<thead>
+								<tr>
+									<th>Fecha</th>
+									<th>Transacciones</th>
+									<th>Total</th>
+									<th>Acciones</th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
 					</div>
 				</div>
 			</div>
@@ -293,6 +313,13 @@
 				</div>
 			</div>
 			<div class="form-group">
+				<label>Imagen del Producto</label>
+				<input type="file" id="item-image-file" accept="image/*" onchange="handleImageUpload(this)" style="width: 100%;">
+				<small style="color: var(--muted); display: block; margin-top: 4px;">Sube una imagen desde tu dispositivo</small>
+				<div id="item-image-preview" style="margin-top: 10px;"></div>
+				<input type="hidden" id="item-image">
+			</div>
+			<div class="form-group">
 				<label>
 					<input type="checkbox" id="item-available" checked> Disponible
 				</label>
@@ -301,6 +328,17 @@
 				<button class="btn" onclick="saveMenuItem()">💾 Guardar</button>
 				<button class="btn btn-secondary" onclick="closeMenuItemModal()">Cancelar</button>
 			</div>
+		</div>
+	</div>
+
+	<!-- Modal Detalle de Mesa -->
+	<div id="table-detail-modal" class="modal">
+		<div class="panel">
+			<div class="modal-header">
+				<h3 id="table-detail-title">Detalle Mesa</h3>
+				<button class="modal-close" onclick="closeTableDetailModal()">✕</button>
+			</div>
+			<div id="table-detail-content"></div>
 		</div>
 	</div>
 
@@ -364,36 +402,50 @@
 			document.getElementById('stat-month').textContent = Utils.formatCurrency(monthSales);
 
 			const container = document.getElementById('dashboard-tables');
-			container.innerHTML = AppState.tables.map(table => `
-				<div class="table-card ${table.status}">
-					<div class="table-number">Mesa ${table.number}</div>
-					<div class="table-status">
-						${table.status === 'available' ? '✅ Disponible' : 
-						  table.status === 'occupied' ? '🔴 Ocupada' : '📝 Reservada'}
+			container.innerHTML = AppState.tables.map(table => {
+				const order = table.currentOrder ? AppState.orders.find(o => o.id === table.currentOrder) : null;
+				return `
+					<div class="table-card ${table.status}" onclick="viewTableDetails('${table.id}')">
+						<div class="table-number">Mesa ${table.number}</div>
+						<div class="table-status">
+							${table.status === 'available' ? '✅ Disponible' : 
+							  table.status === 'occupied' ? '🔴 Ocupada' : '📝 Reservada'}
+						</div>
+						${order ? `<div class="badge badge-warning" style="margin-top: 8px; font-size: 11px;">
+							${order.items.length} productos | ${Utils.formatCurrency(order.total)}
+						</div>` : ''}
 					</div>
-				</div>
-			`).join('');
+				`;
+			}).join('');
 		}
 
 		// MESAS
 		function renderTables() {
 			const container = document.getElementById('tables-list');
-			container.innerHTML = AppState.tables.map(table => `
-				<div class="table-card ${table.status}">
-					<div class="table-number">Mesa ${table.number}</div>
-					<div class="table-status">Capacidad: ${table.capacity} personas</div>
-					<div class="table-status">
-						${table.status === 'available' ? '✅ Disponible' : 
-						  table.status === 'occupied' ? '🔴 Ocupada' : '📝 Reservada'}
+			container.innerHTML = AppState.tables.map(table => {
+				const order = table.currentOrder ? AppState.orders.find(o => o.id === table.currentOrder) : null;
+				return `
+					<div class="table-card ${table.status}">
+						<div class="table-number">Mesa ${table.number}</div>
+						<div class="table-status">Capacidad: ${table.capacity} personas</div>
+						<div class="table-status">
+							${table.status === 'available' ? '✅ Disponible' : 
+							  table.status === 'occupied' ? '🔴 Ocupada' : '📝 Reservada'}
+						</div>
+						${order ? `<div class="badge badge-info" style="margin-top: 8px; font-size: 11px;">
+							${order.items.length} productos | ${Utils.formatCurrency(order.total)}
+						</div>` : ''}
+						<div style="margin-top: 10px; display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+							${table.status === 'occupied' ? 
+								`<button class="btn btn-small btn-warning" onclick="viewTableDetails('${table.id}')">👁️ Ver</button>` : ''}
+							<button class="btn btn-small btn-secondary" onclick="editTable('${table.id}')">✏️</button>
+							<button class="btn btn-small btn-danger" onclick="deleteTable('${table.id}')">🗑️</button>
+							${table.status === 'occupied' ? 
+								`<button class="btn btn-small btn-success" onclick="freeTable('${table.id}')">✓ Liberar</button>` : ''}
+						</div>
 					</div>
-					<div style="margin-top: 10px; display: flex; gap: 5px; justify-content: center;">
-						<button class="btn btn-small btn-secondary" onclick="editTable('${table.id}')">✏️</button>
-						<button class="btn btn-small btn-danger" onclick="deleteTable('${table.id}')">🗑️</button>
-						${table.status === 'occupied' ? 
-							`<button class="btn btn-small btn-success" onclick="freeTable('${table.id}')">✓ Liberar</button>` : ''}
-					</div>
-				</div>
-			`).join('');
+				`;
+			}).join('');
 		}
 
 		function openTableModal(tableId = null) {
@@ -577,7 +629,12 @@
 			const tbody = document.querySelector('#menu-table tbody');
 			tbody.innerHTML = AppState.menuItems.map(item => `
 				<tr>
-					<td>${item.name}</td>
+					<td>
+						<div style="display: flex; align-items: center; gap: 10px;">
+							${item.image ? `<img src="${item.image}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">` : ''}
+							<span>${item.name}</span>
+						</div>
+					</td>
 					<td>${item.description || '-'}</td>
 					<td><span class="badge badge-info">${item.category}</span></td>
 					<td>${Utils.formatCurrency(item.price)}</td>
@@ -599,6 +656,12 @@
 				document.getElementById('item-category').value = currentEditingMenuItem.category;
 				document.getElementById('item-price').value = currentEditingMenuItem.price;
 				document.getElementById('item-available').checked = currentEditingMenuItem.available;
+				document.getElementById('item-image').value = currentEditingMenuItem.image || '';
+				if (currentEditingMenuItem.image) {
+					showImagePreview(currentEditingMenuItem.image);
+				} else {
+					clearImagePreview();
+				}
 			} else {
 				currentEditingMenuItem = null;
 				document.getElementById('menu-item-modal-title').textContent = 'Nuevo Producto';
@@ -607,6 +670,8 @@
 				document.getElementById('item-category').value = '';
 				document.getElementById('item-price').value = '';
 				document.getElementById('item-available').checked = true;
+				document.getElementById('item-image').value = '';
+				clearImagePreview();
 			}
 			document.getElementById('menu-item-modal').classList.add('show');
 		}
@@ -620,12 +685,45 @@
 			openMenuItemModal(itemId);
 		}
 
+		// Manejar carga de imagen
+		function handleImageUpload(input) {
+			if (input.files && input.files[0]) {
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					const imageData = e.target.result;
+					document.getElementById('item-image').value = imageData;
+					showImagePreview(imageData);
+				};
+				reader.readAsDataURL(input.files[0]);
+			}
+		}
+
+		function showImagePreview(imageUrl) {
+			if (!imageUrl) {
+				document.getElementById('item-image-preview').innerHTML = '';
+				return;
+			}
+			document.getElementById('item-image-preview').innerHTML = `
+				<div style="position: relative; display: inline-block;">
+					<img src="${imageUrl}" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 2px solid var(--accent);">
+					<button onclick="clearImagePreview()" style="position: absolute; top: 5px; right: 5px; background: var(--danger); color: #fff; border: 0; border-radius: 50%; width: 25px; height: 25px; cursor: pointer;">✕</button>
+				</div>
+			`;
+		}
+
+		function clearImagePreview() {
+			document.getElementById('item-image').value = '';
+			document.getElementById('item-image-file').value = '';
+			document.getElementById('item-image-preview').innerHTML = '';
+		}
+
 		async function saveMenuItem() {
 			const name = document.getElementById('item-name').value.trim();
 			const description = document.getElementById('item-description').value.trim();
 			const category = document.getElementById('item-category').value.trim();
 			const price = parseFloat(document.getElementById('item-price').value);
 			const available = document.getElementById('item-available').checked;
+			const image = document.getElementById('item-image').value.trim();
 
 			if (!name || !category || !price) {
 				Utils.showNotification('Completa los campos requeridos', 'warning');
@@ -638,6 +736,7 @@
 				currentEditingMenuItem.category = category;
 				currentEditingMenuItem.price = price;
 				currentEditingMenuItem.available = available;
+				currentEditingMenuItem.image = image;
 				const index = AppState.menuItems.findIndex(i => i.id === currentEditingMenuItem.id);
 				AppState.menuItems[index] = currentEditingMenuItem;
 			} else {
@@ -647,7 +746,8 @@
 					description,
 					category,
 					price,
-					available
+					available,
+					image
 				});
 			}
 
@@ -699,8 +799,79 @@
 			Utils.showNotification('Transacción eliminada', 'success');
 		}
 
+		// VER DETALLE DE MESA
+		function viewTableDetails(tableId) {
+			const table = AppState.tables.find(t => t.id === tableId);
+			if (!table || !table.currentOrder) return;
+
+			const order = AppState.orders.find(o => o.id === table.currentOrder);
+			if (!order) return;
+
+			document.getElementById('table-detail-title').textContent = `Mesa ${table.number} - Detalle`;
+			
+			const content = document.getElementById('table-detail-content');
+			content.innerHTML = `
+				<div style="margin-bottom: 20px;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+						<div>
+							<strong style="color: var(--accent); font-size: 18px;">Mesa ${table.number}</strong>
+							<div class="small" style="color: var(--muted);">${Utils.formatDate(order.createdAt)}</div>
+						</div>
+						<span class="badge badge-warning">Activo</span>
+					</div>
+					
+					<div class="order-items-list" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+						<h4 style="color: var(--accent); margin-bottom: 10px;">Productos</h4>
+						${order.items.map(item => `
+							<div class="order-item-line" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+								<div>
+									<strong>${item.quantity}x ${item.name}</strong>
+									${item.notes ? `<br><small style="color: var(--muted); font-size: 12px;">Nota: ${item.notes}</small>` : ''}
+								</div>
+								<div style="color: var(--success); font-weight: 600;">
+									${Utils.formatCurrency(item.price * item.quantity)}
+								</div>
+							</div>
+						`).join('')}
+					</div>
+					
+					<div style="text-align: right; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border: 2px solid var(--success);">
+						<div style="font-size: 14px; color: var(--muted); margin-bottom: 5px;">Total a Pagar</div>
+						<div style="font-size: 28px; font-weight: 700; color: var(--success);">
+							${Utils.formatCurrency(order.total)}
+						</div>
+					</div>
+					
+					<div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+						<button class="btn btn-warning" onclick="generateInvoicePDFFromModal('${order.id}')">📄 Generar PDF</button>
+						<button class="btn btn-success" onclick="completeOrderFromModal('${order.id}')">✓ Completar y Facturar</button>
+						<button class="btn btn-secondary" onclick="closeTableDetailModal()">Cerrar</button>
+					</div>
+				</div>
+			`;
+			
+			document.getElementById('table-detail-modal').classList.add('show');
+		}
+
+		function closeTableDetailModal() {
+			document.getElementById('table-detail-modal').classList.remove('show');
+		}
+
+		async function generateInvoicePDFFromModal(orderId) {
+			const order = AppState.orders.find(o => o.id === orderId);
+			if (order) {
+				await generateInvoicePDF(order);
+				Utils.showNotification('PDF generado', 'success');
+			}
+		}
+
+		async function completeOrderFromModal(orderId) {
+			closeTableDetailModal();
+			await completeOrder(orderId);
+		}
+
 		// CIERRE DE CAJA
-		function generateCloseCash() {
+		async function generateCloseCash() {
 			const today = new Date().toISOString().split('T')[0];
 			const todayTransactions = AppState.transactions.filter(t => t.date && t.date.startsWith(today));
 			
@@ -729,11 +900,174 @@
 					<div class="close-cash-total">
 						Total del Día: ${Utils.formatCurrency(totalSales)}
 					</div>
-					<div style="margin-top: 20px;">
-						<button class="btn" onclick="generateCloseCashPDF()">📄 Descargar PDF</button>
+					<div style="margin-top: 20px; display: flex; gap: 10px;">
+						<button class="btn" onclick="generateCloseCashPDF()">📄 Ver PDF</button>
+						<button class="btn btn-success" onclick="saveCloseCash()">💾 Guardar Cierre</button>
 					</div>
 				</div>
 			`;
+
+			document.getElementById('closure-history').style.display = 'none';
+		}
+
+		async function saveCloseCash() {
+			const today = new Date().toISOString().split('T')[0];
+			const todayTransactions = AppState.transactions.filter(t => t.date && t.date.startsWith(today));
+			
+			// Verificar si ya existe un cierre para hoy
+			const existingClosure = AppState.cashClosures.find(c => c.date === today);
+			if (existingClosure) {
+				if (!confirm('Ya existe un cierre para hoy. ¿Deseas actualizarlo?')) return;
+			}
+
+			const totalSales = todayTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+			const completedOrders = AppState.orders.filter(o => 
+				o.status === 'completed' && o.completedAt && o.completedAt.startsWith(today)
+			).length;
+
+			const closure = {
+				id: existingClosure ? existingClosure.id : Utils.generateId(),
+				date: today,
+				totalTransactions: todayTransactions.length,
+				totalSales: totalSales,
+				completedOrders: completedOrders,
+				transactions: todayTransactions,
+				createdAt: existingClosure ? existingClosure.createdAt : new Date().toISOString(),
+				updatedAt: new Date().toISOString()
+			};
+
+			if (existingClosure) {
+				const index = AppState.cashClosures.findIndex(c => c.id === closure.id);
+				AppState.cashClosures[index] = closure;
+			} else {
+				AppState.cashClosures.push(closure);
+			}
+
+			await API.save('cash_closures', AppState.cashClosures);
+			Utils.showNotification('Cierre de caja guardado correctamente', 'success');
+		}
+
+		function viewClosureHistory() {
+			document.getElementById('close-cash-content').innerHTML = `
+				<p class="text-center" style="color: var(--muted); padding: 40px;">
+					Selecciona "Generar Cierre Actual" para ver el resumen del día o revisa el historial abajo
+				</p>
+			`;
+			
+			const historyDiv = document.getElementById('closure-history');
+			historyDiv.style.display = 'block';
+			
+			const tbody = document.querySelector('#closures-table tbody');
+			const sorted = [...AppState.cashClosures].sort((a, b) => 
+				new Date(b.date) - new Date(a.date)
+			);
+			
+			if (sorted.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color: var(--muted); padding: 40px;">No hay cierres guardados</td></tr>';
+				return;
+			}
+
+			tbody.innerHTML = sorted.map(closure => `
+				<tr>
+					<td>${new Date(closure.date).toLocaleDateString('es-MX')}</td>
+					<td>${closure.totalTransactions} ventas</td>
+					<td style="color: var(--success); font-weight: 600;">${Utils.formatCurrency(closure.totalSales)}</td>
+					<td>
+						<button class="btn btn-small btn-warning" onclick="viewClosureDetail('${closure.id}')">👁️ Ver</button>
+						<button class="btn btn-small btn-secondary" onclick="generateClosurePDF('${closure.id}')">📄 PDF</button>
+						<button class="btn btn-small btn-danger" onclick="deleteClosure('${closure.id}')">🗑️</button>
+					</td>
+				</tr>
+			`).join('');
+		}
+
+		function viewClosureDetail(closureId) {
+			const closure = AppState.cashClosures.find(c => c.id === closureId);
+			if (!closure) return;
+
+			const container = document.getElementById('close-cash-content');
+			container.innerHTML = `
+				<div class="close-cash-summary">
+					<h2>Cierre de Caja - ${new Date(closure.date).toLocaleDateString('es-MX')}</h2>
+					<div class="close-cash-line">
+						<span>Total de Ventas:</span>
+						<span>${closure.totalTransactions}</span>
+					</div>
+					<div class="close-cash-line">
+						<span>Pedidos Completados:</span>
+						<span>${closure.completedOrders}</span>
+					</div>
+					<div class="close-cash-line">
+						<span>Ingreso Bruto:</span>
+						<span>${Utils.formatCurrency(closure.totalSales)}</span>
+					</div>
+					<div class="close-cash-total">
+						Total del Día: ${Utils.formatCurrency(closure.totalSales)}
+					</div>
+					<div style="margin-top: 20px;">
+						<button class="btn" onclick="generateClosurePDF('${closure.id}')">📄 Ver PDF</button>
+					</div>
+				</div>
+			`;
+
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+
+		function generateClosurePDF(closureId) {
+			const closure = AppState.cashClosures.find(c => c.id === closureId);
+			if (!closure) return;
+
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF();
+			
+			doc.setFontSize(20);
+			doc.text('CIERRE DE CAJA', 105, 20, { align: 'center' });
+			doc.setFontSize(12);
+			doc.text(`Fecha: ${new Date(closure.date).toLocaleDateString('es-MX')}`, 105, 30, { align: 'center' });
+			
+			doc.setLineWidth(0.5);
+			doc.line(20, 35, 190, 35);
+			
+			let y = 48;
+			doc.setFontSize(14);
+			doc.text('Resumen del Día', 20, y);
+			y += 10;
+			
+			doc.setFontSize(11);
+			doc.text(`Total de Transacciones: ${closure.totalTransactions}`, 20, y);
+			y += 8;
+			doc.text(`Pedidos Completados: ${closure.completedOrders}`, 20, y);
+			y += 8;
+			doc.text(`Ingresos Totales: ${Utils.formatCurrency(closure.totalSales)}`, 20, y);
+			y += 15;
+			
+			if (closure.transactions && closure.transactions.length > 0) {
+				doc.setFontSize(14);
+				doc.text('Detalle de Transacciones', 20, y);
+				y += 8;
+				
+				doc.setFontSize(9);
+				closure.transactions.forEach(t => {
+					if (y > 270) {
+						doc.addPage();
+						y = 20;
+					}
+					doc.text(`${new Date(t.date).toLocaleTimeString('es-MX')} - Mesa ${t.tableNumber || '-'} - ${Utils.formatCurrency(t.amount)}`, 20, y);
+					y += 6;
+				});
+			}
+			
+			const pdfBlob = doc.output('blob');
+			const pdfUrl = URL.createObjectURL(pdfBlob);
+			window.open(pdfUrl, '_blank');
+		}
+
+		async function deleteClosure(closureId) {
+			if (!confirm('¿Eliminar este cierre de caja?')) return;
+			AppState.cashClosures = AppState.cashClosures.filter(c => c.id !== closureId);
+			await API.save('cash_closures', AppState.cashClosures);
+			viewClosureHistory();
+			Utils.showNotification('Cierre eliminado', 'success');
 		}
 
 		// GENERAR PDF FACTURA
@@ -777,7 +1111,10 @@
 			doc.setFontSize(8);
 			doc.text('Gracias por su preferencia', 40, y, { align: 'center' });
 			
-			doc.save(`ticket-mesa-${order.tableNumber}-${Date.now()}.pdf`);
+			// Abrir en nueva pestaña para visualizar
+			const pdfBlob = doc.output('blob');
+			const pdfUrl = URL.createObjectURL(pdfBlob);
+			window.open(pdfUrl, '_blank');
 		}
 
 		// GENERAR PDF CIERRE DE CAJA
@@ -823,7 +1160,10 @@
 				y += 6;
 			});
 			
-			doc.save(`cierre-caja-${today}.pdf`);
+			// Abrir en nueva pestaña para visualizar
+			const pdfBlob = doc.output('blob');
+			const pdfUrl = URL.createObjectURL(pdfBlob);
+			window.open(pdfUrl, '_blank');
 		}
 
 		init();

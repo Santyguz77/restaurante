@@ -9,6 +9,7 @@ const AppState = {
 	transactions: [],
 	waiters: [],
 	config: {},
+	cashClosures: [],
 	isOnline: navigator.onLine
 };
 
@@ -144,6 +145,7 @@ async function loadInitialData() {
 	AppState.orders = await API.getAll('orders');
 	AppState.transactions = await API.getAll('transactions');
 	AppState.waiters = await API.getAll('waiters');
+	AppState.cashClosures = await API.getAll('cash_closures');
 	const configArray = await API.getAll('config');
 	AppState.config = configArray.length > 0 ? configArray[0] : {};
 }
@@ -211,6 +213,11 @@ async function initializeDefaultData() {
 	}
 }
 
+// Cargar cierres de caja
+async function loadCashClosures() {
+	return await API.getAll('cash_closures');
+}
+
 // Exportar para uso global
 window.AppState = AppState;
 window.API = API;
@@ -218,3 +225,4 @@ window.Utils = Utils;
 window.Storage = Storage;
 window.loadInitialData = loadInitialData;
 window.initializeDefaultData = initializeDefaultData;
+window.loadCashClosures = loadCashClosures;
