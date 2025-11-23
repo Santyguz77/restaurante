@@ -11,82 +11,6 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<title>Admin - Sistema Restaurante</title>
 	<style>
-		/* Pantalla de Selección de Modo */
-		.mode-selector-screen {
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100vh;
-			background: linear-gradient(135deg, #1a0f0a 0%, #2a1810 100%);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			z-index: 9999;
-			padding: 20px;
-		}
-		.mode-selector-screen.hidden {
-			display: none;
-		}
-		.mode-container {
-			max-width: 500px;
-			width: 100%;
-			text-align: center;
-		}
-		.mode-logo {
-			margin-bottom: 30px;
-		}
-		.mode-logo img {
-			width: 120px;
-			height: 120px;
-			border-radius: 50%;
-			box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
-			margin-bottom: 20px;
-		}
-		.mode-title {
-			font-size: 32px;
-			color: #ff6b35;
-			margin-bottom: 10px;
-		}
-		.mode-subtitle {
-			font-size: 16px;
-			color: #b8a99a;
-			margin-bottom: 50px;
-		}
-		.mode-options {
-			display: flex;
-			flex-direction: column;
-			gap: 20px;
-		}
-		.mode-card {
-			background: linear-gradient(135deg, #2a1810, #1a0f0a);
-			padding: 30px;
-			border-radius: 16px;
-			cursor: pointer;
-			transition: all 0.3s;
-			border: 2px solid rgba(255, 107, 53, 0.2);
-		}
-		.mode-card:hover {
-			transform: translateY(-5px);
-			border-color: #ff6b35;
-			box-shadow: 0 10px 40px rgba(255, 107, 53, 0.4);
-		}
-		.mode-card-icon {
-			font-size: 48px;
-			margin-bottom: 15px;
-		}
-		.mode-card-title {
-			font-size: 24px;
-			font-weight: 700;
-			color: #ff6b35;
-			margin-bottom: 8px;
-		}
-		.mode-card-desc {
-			font-size: 14px;
-			color: #b8a99a;
-			line-height: 1.5;
-		}
-		
 		/* Menú Hamburguesa */
 		.hamburger {
 			display: none;
@@ -228,37 +152,6 @@
 	</style>
 </head>
 <body>
-	<!-- Pantalla de Selección de Modo -->
-	<div class="mode-selector-screen" id="modeSelector">
-		<div class="mode-container">
-			<div class="mode-logo">
-				<img src="image.png" alt="Logo Restaurante">
-			</div>
-			<h1 class="mode-title">Bienvenido</h1>
-			<p class="mode-subtitle">Selecciona tu modo de acceso</p>
-			
-			<div class="mode-options">
-				<div class="mode-card" onclick="window.location.href='meseros.html'">
-					<div class="mode-card-icon">🍽️</div>
-					<div class="mode-card-title">Meseros</div>
-					<div class="mode-card-desc">Toma pedidos, gestiona mesas y atiende a los clientes</div>
-				</div>
-				
-				<div class="mode-card" onclick="enterAdminMode()">
-					<div class="mode-card-icon">⚙️</div>
-					<div class="mode-card-title">Administrador</div>
-					<div class="mode-card-desc">Panel completo: finanzas, menú, cierres de caja y más</div>
-				</div>
-				
-				<div class="mode-card" onclick="window.location.href='Menu.html'">
-					<div class="mode-card-icon">📋</div>
-					<div class="mode-card-title">Ver Menú</div>
-					<div class="mode-card-desc">Consulta nuestra carta de platillos y precios</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	
 	<!-- Botón Hamburguesa (solo móvil) -->
 	<button class="hamburger" onclick="toggleMobileMenu()" aria-label="Menú">
 		☰
@@ -267,7 +160,7 @@
 	<!-- Overlay para cerrar menú en móvil -->
 	<div class="mobile-overlay" onclick="closeMobileMenu()"></div>
 	
-	<div class="app" id="adminApp" style="display:none;">
+	<div class="app">
 		<!-- Sidebar -->
 		<div class="sidebar" id="sidebar">
 			<div class="brand">
@@ -1356,17 +1249,7 @@
 			overlay.classList.remove('active');
 		}
 
-		// Función para entrar al modo administrador
-		function enterAdminMode() {
-			document.getElementById('modeSelector').classList.add('hidden');
-			document.getElementById('adminApp').style.display = 'flex';
-			init();
-		}
-
-		// Verificar si ya se seleccionó modo antes (para recargas)
-		if (window.location.hash === '#admin') {
-			enterAdminMode();
-		}
+		init();
 	</script>
 </body>
 </html>

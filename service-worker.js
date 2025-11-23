@@ -1,6 +1,7 @@
-const CACHE_NAME = 'restaurante-v5';
+const CACHE_NAME = 'restaurante-v3';
 const urlsToCache = [
   '/',
+  '/selector.html',
   '/index.html',
   '/Menu.html',
   '/meseros.html',
