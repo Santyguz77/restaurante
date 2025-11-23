@@ -1,5 +1,5 @@
 // Configuración de la API
-const API_URL = 'https://merchants-gossip-regarded-actor.trycloudflare.com/api'; // Cambiar por tu VPS en producción
+const API_URL = 'https://auction-array-comedy-its.trycloudflare.com/api'; // Cambiar por tu VPS en producción
 
 // Estado global de la aplicación
 const AppState = {
@@ -234,3 +234,4 @@ window.Storage = Storage;
 window.loadInitialData = loadInitialData;
 window.initializeDefaultData = initializeDefaultData;
 window.loadCashClosures = loadCashClosures;
+
